@@ -1,6 +1,7 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Text
 from sqlalchemy.orm import relationship
 from .base import Base
+from datetime import datetime
 
 
 class User(Base):
@@ -30,7 +31,8 @@ class TodoItem(Base):
     parent_id = Column(Integer, ForeignKey("todo_items.id"))
     children = relationship("TodoItem")
 
-class Task(Base): 
+
+class Task(Base):
     __tablename__ = "tasks"
     id = Column(Integer, primary_key=True)
     title = Column(String(100))
@@ -38,6 +40,6 @@ class Task(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     completed = Column(Boolean, default=False)
-    
+
     def __repr__(self):
         return self.title
