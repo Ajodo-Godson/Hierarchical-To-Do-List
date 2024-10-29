@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hierarchical To-Do List</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/todo.css') }}">
+    <script src="{{ url_for('static', filename='js/todo.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/todo_api.js') }}"></script>
+
+
+</head>
+
+<body>
+    <div id="todo-app">
+        <h1>Hierarchical To-Do List</h1>
+        <div id="todo-container"></div>
+        <div id="add-todo">
+            <input type="text" id="new-todo-text" placeholder="Enter new to-do">
+            <button id="add-todo-button">Add To-Do</button>
+        </div>
+    </div>
+
+</body>
+
+</html>

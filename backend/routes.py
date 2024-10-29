@@ -1,20 +1,17 @@
-from flask import Blueprint, send_from_directory, current_app
-from flask_login import login_required
+# routes.py
+from flask import Blueprint, render_template, current_app
+from flask_login import login_required, current_user
+from .models import TodoList
 
 main = Blueprint("main", __name__)
 
 
 @main.route("/")
 def index():
-    return send_from_directory(current_app.static_folder, "index.html")
+    return render_template("index.html")
 
 
-@main.route("/profile")
+@main.route("/dashboard")
 @login_required
-def profile():
-    return send_from_directory(current_app.static_folder, "index.html")
-
-
-@main.route("/<path:path>")
-def catch_all(path):
-    return send_from_directory(current_app.static_folder, path)
+def dashboard():
+    return render_template("dashboard.html")

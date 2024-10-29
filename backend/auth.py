@@ -8,15 +8,19 @@ auth = Blueprint("auth", __name__)
 
 @auth.route("/signup", methods=["POST"])
 def signup_post():
-    email = request.form.get("email")
-    name = request.form.get("name")
-    password = request.form.get("password")
+    data = request.json
+    email = data.get("email")
+    name = data.get("name")
+    password = data.get("password")
+
+    if not email or not name or not password:
+        return jsonify({"message": "All fields are required"}), 400
 
     user = User.query.filter_by(email=email).first()
     if user:
         return jsonify({"message": "Email address already exists"}), 400
 
-    username = create_username(email, name)
+    username = email.split("@")[0]
     new_user = User(
         email=email,
         name=name,
@@ -27,30 +31,34 @@ def signup_post():
     db.session.add(new_user)
     db.session.commit()
 
-    return jsonify({"message": "Account created successfully. Please log in."}), 201
+    return jsonify({"message": "Account created successfully"}), 200
 
 
 @auth.route("/login", methods=["POST"])
 def login_post():
-    email = request.form.get("email")
-    password = request.form.get("password")
-    remember = True if request.form.get("remember") else False
+    data = request.json
+    email = data.get("email")
+    password = data.get("password")
 
-    user = User.query.filter_by(email=email).first()
-    if not user or not check_password_hash(user.password, password):
+    if not email or not password:
         return (
-            jsonify({"message": "Please check your login details and try again."}),
-            401,
+            jsonify({"success": False, "message": "Email and password are required"}),
+            400,
         )
 
-    login_user(user, remember=remember)
-    print("Successfully logged in", current_user)
-    return (
-        jsonify(
-            {"message": "Logged in successfully", "redirect": url_for("main.profile")}
-        ),
-        200,
-    )
+    user = User.query.filter_by(email=email).first()
+
+    # Check if user exists
+    if user is None:
+        return jsonify({"success": False, "message": "Invalid email or password"}), 401
+
+    # Check if the provided password is correct
+    if not check_password_hash(user.password, password):
+        return jsonify({"success": False, "message": "Invalid email or password"}), 401
+
+    # Log the user in
+    login_user(user)
+    return jsonify({"success": True, "message": "Login successful"}), 200
 
 
 @auth.route("/logout")

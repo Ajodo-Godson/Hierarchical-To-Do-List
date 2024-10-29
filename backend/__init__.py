@@ -22,9 +22,9 @@ def create_app():
     from .routes import main as main_bp
     from .todo import todo as todo_bp
 
-    app.register_blueprint(auth_bp, url_prefix="/auth")
-    app.register_blueprint(main_bp, url_prefix="/")
-    app.register_blueprint(todo_bp, url_prefix="/todo")
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(main_bp)
+    app.register_blueprint(todo_bp)
 
     # Create database tables if they do not exist
     with app.app_context():

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login & Signup - Hierarchical To-Do List</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/todo.css') }}">
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/todo_api.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/todo.js') }}"></script>
+
+
+
+
+
+</head>
+
+<body>
+    <div id="auth-container">
+        <div id="login-section">
+            <h2>Login</h2>
+            <form id="login-form">
+                <input type="email" id="login-email" placeholder="Email" required>
+                <input type="password" id="login-password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+            <p>Don't have an account? <a href="#" id="show-signup">Sign Up</a></p>
+        </div>
+        <div id="signup-section" style="display: none;">
+            <h2>Sign Up</h2>
+            <form id="signup-form">
+                <input type="text" id="signup-name" placeholder="Name" required>
+                <input type="email" id="signup-email" placeholder="Email" required>
+                <input type="password" id="signup-password" placeholder="Password" required>
+                <button type="submit">Sign Up</button>
+            </form>
+            <p>Already have an account? <a href="#" id="show-login">Login</a></p>
+        </div>
+    </div>
+    <div id="dashboard" style="display: none;">
+        <h1>Dashboard</h1>
+        <div id="todo-container"></div>
+        <div id="add-todo">
+            <input type="text" id="new-todo-text" placeholder="Enter new to-do">
+            <button id="add-todo-button">Add To-Do</button>
+        </div>
+    </div>
+
+</body>
+
+</html>
