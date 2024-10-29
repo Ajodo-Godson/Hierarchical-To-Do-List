@@ -1,47 +1,53 @@
-from .base import db
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text
+from sqlalchemy.orm import relationship
 from datetime import datetime
+from flask_login import UserMixin
+from . import db
 
 
-class User(db.Model):
+class User(UserMixin, db.Model):
     __tablename__ = "users"
-    id = db.Column(db.Integer, primary_key=True, index=True)
-    email = db.Column(db.String, unique=True, index=True)
-    name = db.Column(db.String)
-    username = db.Column(db.String, unique=True, index=True)
-    hashed_password = db.Column(db.String)
-    lists = db.relationship("TodoList", back_populates="owner")
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True)
+    name = Column(String)
+    username = Column(String, unique=True, index=True)
+    password = Column(String)
+    is_active = Column(Boolean, default=True)
+    lists = relationship("TodoList", back_populates="owner")
+
+    def get_id(self):
+        return str(self.id)
 
 
+# The rest of your models remain unchanged
 class TodoList(db.Model):
     __tablename__ = "todo_lists"
-    id = db.Column(db.Integer, primary_key=True, index=True)
-    title = db.Column(db.String, index=True)
-    owner_id = db.Column(db.Integer, db.ForeignKey("users.id"))
-    owner = db.relationship("User", back_populates="lists")
-    items = db.relationship("TodoItem", back_populates="list")
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, index=True)
+    owner_id = Column(Integer, ForeignKey("users.id"))
+    owner = relationship("User", back_populates="lists")
+    items = relationship("TodoItem", back_populates="list")
 
 
 class TodoItem(db.Model):
     __tablename__ = "todo_items"
-    id = db.Column(db.Integer, primary_key=True, index=True)
-    content = db.Column(db.String, index=True)
-    completed = db.Column(db.Boolean, default=False)
-    list_id = db.Column(db.Integer, db.ForeignKey("todo_lists.id"))
-    list = db.relationship("TodoList", back_populates="items")
-    parent_id = db.Column(db.Integer, db.ForeignKey("todo_items.id"))
-    children = db.relationship("TodoItem")
+    id = Column(Integer, primary_key=True, index=True)
+    content = Column(String, index=True)
+    completed = Column(Boolean, default=False)
+    list_id = Column(Integer, ForeignKey("todo_lists.id"))
+    list = relationship("TodoList", back_populates="items")
+    parent_id = Column(Integer, ForeignKey("todo_items.id"))
+    children = relationship("TodoItem")
 
 
 class Task(db.Model):
     __tablename__ = "tasks"
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100))
-    description = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
-    completed = db.Column(db.Boolean, default=False)
+    id = Column(Integer, primary_key=True)
+    title = Column(String(100))
+    description = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    completed = Column(Boolean, default=False)
 
     def __repr__(self):
         return self.title
