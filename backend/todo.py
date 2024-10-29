@@ -18,6 +18,7 @@ def index():
 def add_list():
     title = request.form.get("title")
     new_list = TodoList(title=title, owner_id=current_user.id)
+    # print(new_list, new_list.owner_id)
     db.session.add(new_list)
     db.session.commit()
     return redirect(url_for("todo.index"))
@@ -95,7 +96,7 @@ def view_list(list_id):
     todo_list = TodoList.query.get_or_404(list_id)
     if todo_list.owner_id != current_user.id:
         return jsonify(success=False, message="Unauthorized"), 403
-    return render_template("todo_list.html", todo_list=todo_list)
+    return render_template("todo.html", todo_list=todo_list)
 
 
 @todo.route("/task/add", methods=["POST"])

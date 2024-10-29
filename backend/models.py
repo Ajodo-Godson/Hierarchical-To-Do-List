@@ -2,7 +2,12 @@ from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, T
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from flask_login import UserMixin
-from . import db
+from . import db, login_manager
+
+
+@login_manager.user_loader
+def load_user(user):
+    return User.query.get(int(user))
 
 
 class User(UserMixin, db.Model):
@@ -19,11 +24,10 @@ class User(UserMixin, db.Model):
         return str(self.id)
 
 
-# The rest of your models remain unchanged
 class TodoList(db.Model):
     __tablename__ = "todo_lists"
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, index=True)
+    title = Column(String, index=True, nullable=False)
     owner_id = Column(Integer, ForeignKey("users.id"))
     owner = relationship("User", back_populates="lists")
     items = relationship("TodoItem", back_populates="list")

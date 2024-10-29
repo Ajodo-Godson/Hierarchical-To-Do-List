@@ -44,6 +44,7 @@ def login_post():
         )
 
     login_user(user, remember=remember)
+    print("Successfully logged in", current_user)
     return (
         jsonify(
             {"message": "Logged in successfully", "redirect": url_for("main.profile")}
