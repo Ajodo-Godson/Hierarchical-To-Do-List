@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+from flask_cors import CORS
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -12,7 +13,7 @@ def create_app():
     app.config["SECRET_KEY"] = "your_secret_key"
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///todo.db"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
+    CORS(app)
     # Initialize extensions with app
     db.init_app(app)
     login_manager.init_app(app)
