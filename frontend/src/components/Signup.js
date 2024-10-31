@@ -1,8 +1,7 @@
-// Signup.js
 import React, { useState } from 'react';
-import '../App.css';
+import '../styles/auth.css';
 
-const API_URL = 'http://127.0.0.1:5000'; // Updated to match blueprint URL
+const API_URL = 'http://127.0.0.1:5000';
 
 const Signup = () => {
     const [formData, setFormData] = useState({
