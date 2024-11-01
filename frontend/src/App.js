@@ -21,9 +21,12 @@ const Navigation = () => {
           <li><button onClick={handleLogout}>Log Out</button></li>
         ) : (
           location.pathname === '/' ? (
-            <>
-              <li>Do you have an account? <Link to="/login">Log In</Link> or <Link to="/signup">Sign Up</Link></li>
-            </>
+            <li>
+              Do you have an account?{' '}
+              <Link to="/login">Log In</Link>
+              <span>or</span>
+              <Link to="/signup">Sign Up</Link>
+            </li>
           ) : (
             <>
               <li><Link to="/signup">Sign Up</Link></li>
@@ -39,13 +42,22 @@ const Navigation = () => {
 const App = () => {
   return (
     <Router>
-      <Navigation />
-      <Routes>
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/login" element={<Login />} />
-        <Route path='/dashboard' element={<Dashboard />} />
-        <Route path="/" element={<h1>Welcome to the App!</h1>} />
-      </Routes>
+      <div className="App">
+        <Navigation />
+        <main>
+          <Routes>
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/login" element={<Login />} />
+            <Route path='/dashboard' element={<Dashboard />} />
+            <Route path="/" element={
+              <div className="welcome">
+                <h1>Welcome to your Hierarchical To-Do App!</h1>
+                <p>Get organized and boost your productivity with our intuitive task management system.</p>
+              </div>
+            } />
+          </Routes>
+        </main>
+      </div>
     </Router>
   );
 };

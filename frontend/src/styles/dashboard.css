@@ -4,19 +4,24 @@ body {
     background-color: #111827;
     color: #e5e7eb;
     line-height: 1.5;
+    margin: 0;
+    padding: 0;
 }
 
 .dashboard-container {
-    max-width: 1200px;
+    max-width: 100%;
+    height: 100vh;
     margin: 0 auto;
-    padding: 2rem;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
 }
 
 h2 {
     font-size: 2rem;
     font-weight: 700;
     color: #f3f4f6;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     text-align: center;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
@@ -24,7 +29,7 @@ h2 {
 .add-list {
     display: flex;
     gap: 1rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
 }
 
 .add-list input {
@@ -62,16 +67,24 @@ h2 {
 }
 
 .todo-lists {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    overflow-y: auto;
+    flex-grow: 1;
+    padding-right: 0.5rem;
 }
 
 .todo-list {
+    flex: 1 1 300px;
+    max-width: calc(33.333% - 1rem);
     background-color: #1f2937;
     border-radius: 0.5rem;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 150px);
 }
 
 .list-header {
@@ -109,6 +122,8 @@ h2 {
     list-style: none;
     padding: 1rem;
     margin: 0;
+    overflow-y: auto;
+    flex-grow: 1;
 }
 
 .todo-item {
@@ -232,14 +247,30 @@ h2 {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 }
 
-/* Responsive adjustments */
-@media (max-width: 640px) {
-    .dashboard-container {
-        padding: 1rem;
-    }
+/* Scrollbar styles */
+.todo-items::-webkit-scrollbar {
+    width: 8px;
+}
 
-    .todo-lists {
-        grid-template-columns: 1fr;
+.todo-items::-webkit-scrollbar-track {
+    background: #1f2937;
+}
+
+.todo-items::-webkit-scrollbar-thumb {
+    background-color: #4b5563;
+    border-radius: 4px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    .todo-list {
+        max-width: calc(50% - 1rem);
+    }
+}
+
+@media (max-width: 768px) {
+    .todo-list {
+        max-width: 100%;
     }
 
     .item-header,
