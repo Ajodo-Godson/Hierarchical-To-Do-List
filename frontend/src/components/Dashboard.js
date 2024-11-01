@@ -76,6 +76,26 @@ const Dashboard = () => {
         }
     };
 
+    const addSubItemToParent = (items, parentId, newItem) => {
+        return items.map(item => {
+            if (item.id === parentId) {
+                // Found the parent, add newItem to its items array
+                return {
+                    ...item,
+                    items: [...(item.items || []), newItem],
+                };
+            } else if (item.items && item.items.length > 0) {
+                // Recurse into subitems
+                return {
+                    ...item,
+                    items: addSubItemToParent(item.items, parentId, newItem),
+                };
+            } else {
+                return item;
+            }
+        });
+    };
+
     const handleAddItem = async (listId, parentId = null) => {
         const content = parentId ? subtaskContent[parentId] : listItemContent[listId];
         if (!content) {
@@ -99,14 +119,27 @@ const Dashboard = () => {
             const data = await response.json();
             if (response.ok && data.success) {
                 setMessage("Item added successfully!");
-                // Refresh the list with new item
                 setTodoLists((prev) =>
                     prev.map((list) => {
                         if (list.id === listId) {
-                            return {
-                                ...list,
-                                items: [...list.items, { id: data.item_id, content, parent_id: parentId, items: [] }],
-                            };
+                            if (parentId) {
+                                // Use the recursive function to add the subtask
+                                const updatedItems = addSubItemToParent(list.items, parentId, {
+                                    id: data.item_id,
+                                    content,
+                                    parent_id: parentId,
+                                    items: [],
+                                });
+                                return {
+                                    ...list,
+                                    items: updatedItems,
+                                };
+                            } else {
+                                return {
+                                    ...list,
+                                    items: [...list.items, { id: data.item_id, content, parent_id: parentId, items: [] }],
+                                };
+                            }
                         }
                         return list;
                     })
@@ -124,6 +157,7 @@ const Dashboard = () => {
             setMessage("An error occurred. Please try again later.");
         }
     };
+
 
     const handleInputChange = (setter, id, value) => {
         setter((prev) => ({ ...prev, [id]: value }));
@@ -182,6 +216,7 @@ const Dashboard = () => {
                                 </>
                             )}
                         </li>
+
                     )}
                 </Draggable>
             );
