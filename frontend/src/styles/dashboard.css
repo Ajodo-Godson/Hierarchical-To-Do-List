@@ -1,0 +1,113 @@
+/* src/styles/dashboard.css */
+
+.dashboard-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+    text-align: center;
+    color: #333;
+}
+
+.add-list {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.add-list input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-right: 10px;
+}
+
+.add-list button {
+    padding: 10px 20px;
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.add-list button:hover {
+    background-color: #218838;
+}
+
+.todo-lists {
+    margin-top: 20px;
+}
+
+.todo-list {
+    margin-bottom: 30px;
+    padding: 15px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.todo-list h3 {
+    margin-bottom: 15px;
+    color: #007bff;
+}
+
+.todo-list ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.todo-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.todo-list li:last-child {
+    border-bottom: none;
+}
+
+.todo-list li button {
+    padding: 5px 10px;
+    background-color: #ffc107;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.todo-list li button:hover {
+    background-color: #e0a800;
+}
+
+.todo-list input {
+    width: calc(100% - 120px);
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.todo-list button {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.todo-list button:hover {
+    background-color: #0056b3;
+}

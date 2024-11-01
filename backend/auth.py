@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, login_required, logout_user, current_user
 from .models import db, User
+from flask_jwt_extended import create_access_token
 
 auth = Blueprint("auth", __name__)
 
@@ -48,17 +49,21 @@ def login_post():
 
     user = User.query.filter_by(email=email).first()
 
-    # Check if user exists
-    if user is None:
+    # Check if user exists and if password is correct
+    if user is None or not check_password_hash(user.password, password):
         return jsonify({"success": False, "message": "Invalid email or password"}), 401
 
-    # Check if the provided password is correct
-    if not check_password_hash(user.password, password):
-        return jsonify({"success": False, "message": "Invalid email or password"}), 401
+    # Create a JWT token
+    access_token = create_access_token(identity=user.id)
 
     # Log the user in
     login_user(user)
-    return jsonify({"success": True, "message": "Login successful"}), 200
+    return (
+        jsonify(
+            {"success": True, "token": access_token, "message": "Login successful"}
+        ),
+        200,
+    )
 
 
 @auth.route("/logout")

@@ -1,5 +1,8 @@
+// src/components/Signup.js
+
 import React, { useState } from 'react';
 import '../styles/auth.css';
+import { useNavigate } from 'react-router-dom';
 
 const API_URL = 'http://127.0.0.1:5000';
 
@@ -12,6 +15,7 @@ const Signup = () => {
     });
 
     const [message, setMessage] = useState(null);
+    const navigate = useNavigate();
 
     const { email, name, password, confirmPassword } = formData;
 
@@ -42,10 +46,12 @@ const Signup = () => {
 
             const data = await response.json();
 
-            if (response.ok) {
-                setMessage("Signup successful! You can now log in.");
-                // Optionally, redirect to login page
-                // history.push('/login');
+            if (response.ok && data.success) {
+                setMessage("Signup successful!");
+                // Store login token or user information in local storage
+                localStorage.setItem('token', data.token);
+                // Redirect to dashboard upon successful signup
+                navigate('/dashboard');
             } else {
                 setMessage(data.message || "Signup failed.");
             }

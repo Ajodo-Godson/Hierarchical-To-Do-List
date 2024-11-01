@@ -1,7 +1,10 @@
+// src/components/Login.js
+
 import React, { useState } from 'react';
 import '../styles/auth.css';
+import { useNavigate } from 'react-router-dom';
 
-const API_URL = 'http://127.0.0.1:5000';
+const API_URL = 'http://127.0.0.1:5000'; // Ensure this matches your Flask server URL
 
 const Login = () => {
     const [formData, setFormData] = useState({
@@ -12,6 +15,7 @@ const Login = () => {
     const [message, setMessage] = useState(null);
 
     const { email, password } = formData;
+    const navigate = useNavigate(); // Initialize useNavigate
 
     const handleChange = (e) => {
         setFormData({
@@ -24,24 +28,27 @@ const Login = () => {
         e.preventDefault();
 
         try {
-            const response = await fetch(`${API_URL}/login`, {
+            const response = await fetch(`${API_URL}/login`, { // Adjust the endpoint based on your blueprint
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include', // Include cookies in the request
                 body: JSON.stringify({ email, password }),
             });
 
             const data = await response.json();
 
-            if (response.ok) {
+            if (response.ok && data.success) {
                 setMessage("Login successful!");
-                // Handle successful login, e.g., save token, redirect
-                // localStorage.setItem('token', data.token);
-                // history.push('/dashboard');
+                // Store the JWT token in local storage
+                localStorage.setItem('token', data.token);
+                // Redirect to dashboard
+                navigate('/dashboard');
             } else {
-                setMessage(data.error || "Login failed.");
+                setMessage(data.message || "Login failed.");
             }
+
         } catch (error) {
             console.error("Error during login:", error);
             setMessage("An error occurred. Please try again later.");
@@ -54,7 +61,7 @@ const Login = () => {
             {message && <p>{message}</p>}
             <form onSubmit={handleSubmit}>
                 <div>
-                    <label htmlFor="email">Email or Username:</label>
+                    <label htmlFor="email">Email:</label>
                     <input
                         type="text"
                         id="email"
