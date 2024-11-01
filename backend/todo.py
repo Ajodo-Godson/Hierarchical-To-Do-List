@@ -150,6 +150,22 @@ def toggle_item(item_id):
     return jsonify({"success": True})
 
 
+@todo.route("/list/delete/<int:list_id>", methods=["POST"])
+@jwt_required()
+def delete_list(list_id):
+    current_user_id = get_jwt_identity()
+    todo_list = TodoList.query.get_or_404(list_id)
+    if todo_list.owner_id != current_user_id:
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+
+    # Delete all items in the list
+    TodoItem.query.filter_by(list_id=list_id).delete()
+    db.session.delete(todo_list)
+    db.session.commit()
+
+    return jsonify({"message": "List deleted successfully"}), 200
+
+
 @todo.route("/item/delete/<int:item_id>", methods=["POST"])
 @jwt_required()
 def delete_item(item_id):

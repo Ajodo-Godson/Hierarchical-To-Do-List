@@ -125,6 +125,33 @@ const Dashboard = () => {
         }
     };
 
+    const handleDeleteList = async (listId) => {
+        try {
+            const response = await fetch(`${API_URL}/list/delete/${listId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                },
+            });
+            if (response.status === 401) {
+                setMessage("Unauthorized. Please log in again.");
+                navigate('/login');
+                return;
+            }
+            const data = await response.json();
+            if (response.ok) {
+                setMessage("List deleted successfully!");
+                setTodoLists((prev) => prev.filter((list) => list.id !== listId));
+            } else {
+                setMessage(data.message || "Failed to delete list.");
+            }
+        } catch (error) {
+            console.error("Error deleting list:", error);
+            setMessage("An error occurred. Please try again later.");
+        }
+    };
+
     const addSubItemToParent = (items, parentId, newItem) => {
         return items.map(item => {
             if (item.id === parentId) {
@@ -175,6 +202,7 @@ const Dashboard = () => {
                                     content,
                                     parent_id: parentId,
                                     items: [],
+                                    completed: false,
                                 });
                                 return {
                                     ...list,
@@ -183,7 +211,7 @@ const Dashboard = () => {
                             } else {
                                 return {
                                     ...list,
-                                    items: [...list.items, { id: data.item_id, content, parent_id: parentId, items: [] }],
+                                    items: [...list.items, { id: data.item_id, content, parent_id: parentId, items: [], completed: false }],
                                 };
                             }
                         }
@@ -223,9 +251,20 @@ const Dashboard = () => {
                 setMessage("Item deleted successfully!");
                 setTodoLists((prev) =>
                     prev.map((list) => {
+                        const deleteItemRecursively = (items) =>
+                            items.filter((item) => {
+                                if (item.id === itemId) {
+                                    return false;
+                                }
+                                if (item.items && item.items.length > 0) {
+                                    item.items = deleteItemRecursively(item.items);
+                                }
+                                return true;
+                            });
+
                         return {
                             ...list,
-                            items: list.items.filter((item) => item.id !== itemId),
+                            items: deleteItemRecursively(list.items),
                         };
                     })
                 );
@@ -257,11 +296,20 @@ const Dashboard = () => {
                 setMessage("Item toggled successfully!");
                 setTodoLists((prev) =>
                     prev.map((list) => {
+                        const toggleItemRecursively = (items) =>
+                            items.map((item) => {
+                                if (item.id === itemId) {
+                                    return { ...item, completed: !item.completed };
+                                }
+                                if (item.items && item.items.length > 0) {
+                                    return { ...item, items: toggleItemRecursively(item.items) };
+                                }
+                                return item;
+                            });
+
                         return {
                             ...list,
-                            items: list.items.map((item) =>
-                                item.id === itemId ? { ...item, completed: !item.completed } : item
-                            ),
+                            items: toggleItemRecursively(list.items),
                         };
                     })
                 );
@@ -344,7 +392,7 @@ const Dashboard = () => {
     return (
         <div className="dashboard-container">
             <h2>Dashboard</h2>
-            {message && <p>{message}</p>}
+            {message && <p className="message">{message}</p>}
             <div className="add-list">
                 <input
                     type="text"
@@ -358,7 +406,10 @@ const Dashboard = () => {
                 <div className="todo-lists">
                     {todoLists.map((list) => (
                         <div key={list.id} className="todo-list">
-                            <h3>{list.title}</h3>
+                            <div className="list-header">
+                                <h3>{list.title}</h3>
+                                <button onClick={() => handleDeleteList(list.id)}>Delete List</button>
+                            </div>
                             <Droppable droppableId={`list-${list.id}`}>
                                 {(provided) => (
                                     <ul
