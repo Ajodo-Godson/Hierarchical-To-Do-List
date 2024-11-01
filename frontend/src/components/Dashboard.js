@@ -15,6 +15,8 @@ const Dashboard = () => {
     const [editingItem, setEditingItem] = useState(null);
     const [editingContent, setEditingContent] = useState('');
     const navigate = useNavigate();
+    const [showCompleted, setShowCompleted] = useState(false);
+
 
     useEffect(() => {
         const fetchTodoLists = async () => {
@@ -55,39 +57,49 @@ const Dashboard = () => {
     const onDragEnd = (result) => {
         const { source, destination } = result;
 
-        if (!destination) {
-            return;
-        }
+        if (!destination) return;
 
-        if (source.droppableId === destination.droppableId && source.index === destination.index) {
-            return;
-        }
+        const sourceListId = parseInt(source.droppableId.split('-')[1], 10);
+        const destinationListId = parseInt(destination.droppableId.split('-')[1], 10);
 
-        const sourceList = todoLists.find(list => `list-${list.id}` === source.droppableId);
-        const destinationList = todoLists.find(list => `list-${list.id}` === destination.droppableId);
-
-        if (sourceList === destinationList) {
-            const updatedItems = reorderItems(sourceList.items, source.index, destination.index);
-            setTodoLists(todoLists.map(list =>
-                list.id === sourceList.id ? { ...list, items: updatedItems } : list
-            ));
+        // Check if moving within the same list or to a different list
+        if (sourceListId === destinationListId) {
+            // Reorder items within the same list
+            const listIndex = todoLists.findIndex(list => list.id === sourceListId);
+            const list = todoLists[listIndex];
+            const updatedItems = reorderItems(list.items, source.index, destination.index);
+            const updatedList = { ...list, items: updatedItems };
+            const updatedTodoLists = [...todoLists];
+            updatedTodoLists[listIndex] = updatedList;
+            setTodoLists(updatedTodoLists);
         } else {
-            const sourceItems = Array.from(sourceList.items);
-            const [movedItem] = sourceItems.splice(source.index, 1);
-            const destinationItems = Array.from(destinationList.items);
-            destinationItems.splice(destination.index, 0, movedItem);
+            // Move item to a different list
+            const sourceListIndex = todoLists.findIndex(list => list.id === sourceListId);
+            const destinationListIndex = todoLists.findIndex(list => list.id === destinationListId);
 
-            setTodoLists(todoLists.map(list => {
-                if (list.id === sourceList.id) {
-                    return { ...list, items: sourceItems };
-                } else if (list.id === destinationList.id) {
-                    return { ...list, items: destinationItems };
-                } else {
-                    return list;
-                }
-            }));
+            if (sourceListIndex === -1 || destinationListIndex === -1) return;
+
+            const sourceList = todoLists[sourceListIndex];
+            const destinationList = todoLists[destinationListIndex];
+
+            // Remove item from source list and add to destination list
+            const itemToMove = sourceList.items[source.index];
+            const newSourceItems = Array.from(sourceList.items);
+            newSourceItems.splice(source.index, 1);
+            const newDestinationItems = Array.from(destinationList.items);
+            newDestinationItems.splice(destination.index, 0, itemToMove);
+
+            const updatedSourceList = { ...sourceList, items: newSourceItems };
+            const updatedDestinationList = { ...destinationList, items: newDestinationItems };
+
+            const updatedTodoLists = [...todoLists];
+            updatedTodoLists[sourceListIndex] = updatedSourceList;
+            updatedTodoLists[destinationListIndex] = updatedDestinationList;
+
+            setTodoLists(updatedTodoLists);
         }
     };
+
 
     const handleAddList = async () => {
         if (!newListTitle) {
@@ -146,16 +158,19 @@ const Dashboard = () => {
                 setMessage("Item updated successfully!");
                 setTodoLists((prev) =>
                     prev.map((list) => {
-                        const updateItemRecursively = (items) =>
-                            items.map((item) => {
+                        const updateItemRecursively = (items, itemId, newContent) => {
+                            return items.map(item => {
                                 if (item.id === itemId) {
-                                    return { ...item, content: editingContent };
-                                }
-                                if (item.items && item.items.length > 0) {
-                                    return { ...item, items: updateItemRecursively(item.items) };
+                                    return { ...item, content: newContent };
+                                } else if (item.items && item.items.length > 0) {
+                                    const updatedSubItems = updateItemRecursively(item.items, itemId, newContent);
+                                    if (updatedSubItems !== item.items) {
+                                        return { ...item, items: updatedSubItems };
+                                    }
                                 }
                                 return item;
                             });
+                        };
                         return { ...list, items: updateItemRecursively(list.items) };
                     })
                 );
@@ -381,78 +396,84 @@ const Dashboard = () => {
         if (!items) return null;
         if (depth > 3) return null;
 
-        return items.map((item, index) => {
-            if (!item.id) return null;
+        return items
+            .filter(item => showCompleted || !item.completed) // Show only incomplete items if showCompleted is false
+            .map((item, index) => {
+                if (!item.id) return null;
 
-            const subtaskValue = subtaskContent[item.id] || '';
-            const isCollapsed = collapsedItems[item.id];
+                const subtaskValue = subtaskContent[item.id] || '';
+                const isCollapsed = collapsedItems[item.id];
 
-            return (
-                <Draggable key={item.id} draggableId={`item-${listId}-${item.id}`} index={index}>
-                    {(provided) => (
-                        <li
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className={`todo-item item-depth-${depth}`}
-                        >
-                            <div className="item-header">
-                                {item.items && item.items.length > 0 && (
-                                    <button onClick={() => toggleCollapse(item.id)}>
-                                        {isCollapsed ? '+' : '-'}
-                                    </button>
-                                )}
-                                {editingItem === item.id ? (
-                                    <>
-                                        <input
-                                            type="text"
-                                            value={editingContent}
-                                            onChange={(e) => setEditingContent(e.target.value)}
-                                        />
-                                        <button onClick={() => handleEditItem(item.id)}>Save</button>
-                                        <button onClick={() => setEditingItem(null)}>Cancel</button>
-                                    </>
-                                ) : (
-                                    <span>{item.content}</span>
-                                )}
-                                <button onClick={() => handleToggleItem(item.id)}>
-                                    {item.completed ? 'Mark Incomplete' : 'Mark Complete'}
-                                </button>
-                                <button onClick={() => handleDeleteItem(item.id)}>Delete</button>
-                                <button onClick={() => {
-                                    setEditingItem(item.id);
-                                    setEditingContent(item.content);
-                                }}>Edit</button>
-                            </div>
-                            {!isCollapsed && depth < 3 && (
-                                <>
-                                    <div className="item-actions">
-                                        <input
-                                            type="text"
-                                            placeholder="New Subtask Content"
-                                            value={subtaskValue}
-                                            onChange={(e) =>
-                                                handleInputChange(setSubtaskContent, item.id, e.target.value)
-                                            }
-                                        />
-                                        <button onClick={() => handleAddItem(listId, item.id)}>Add Subtask</button>
-                                    </div>
-                                    {item.items && (
-                                        <ul className="subtask">{renderItems(item.items, listId, depth + 1)}</ul>
+                return (
+                    <Draggable key={item.id} draggableId={`item-${listId}-${item.id}`} index={index}>
+                        {(provided) => (
+                            <li
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className={`todo-item item-depth-${depth}`}
+                            >
+                                <div className="item-header">
+                                    {item.items && item.items.length > 0 && (
+                                        <button onClick={() => toggleCollapse(item.id)}>
+                                            {isCollapsed ? '+' : '-'}
+                                        </button>
                                     )}
-                                </>
-                            )}
-                        </li>
-                    )}
-                </Draggable>
-            );
-        });
+                                    {editingItem === item.id ? (
+                                        <>
+                                            <input
+                                                type="text"
+                                                value={editingContent}
+                                                onChange={(e) => setEditingContent(e.target.value)}
+                                            />
+                                            <button onClick={() => handleEditItem(item.id)}>Save</button>
+                                            <button onClick={() => setEditingItem(null)}>Cancel</button>
+                                        </>
+                                    ) : (
+                                        <span>{item.content}</span>
+                                    )}
+                                    <button onClick={() => handleToggleItem(item.id)}>
+                                        {item.completed ? 'Mark Incomplete' : 'Mark Complete'}
+                                    </button>
+                                    <button onClick={() => handleDeleteItem(item.id)}>Delete</button>
+                                    <button onClick={() => {
+                                        setEditingItem(item.id);
+                                        setEditingContent(item.content);
+                                    }}>Edit</button>
+                                </div>
+                                {!isCollapsed && depth < 3 && (
+                                    <>
+                                        <div className="item-actions">
+                                            <input
+                                                type="text"
+                                                placeholder="New Subtask Content"
+                                                value={subtaskValue}
+                                                onChange={(e) =>
+                                                    handleInputChange(setSubtaskContent, item.id, e.target.value)
+                                                }
+                                            />
+                                            <button onClick={() => handleAddItem(listId, item.id)}>Add Subtask</button>
+                                        </div>
+                                        {item.items && (
+                                            <ul className="subtask">{renderItems(item.items, listId, depth + 1)}</ul>
+                                        )}
+                                    </>
+                                )}
+                            </li>
+                        )}
+                    </Draggable>
+                );
+            });
     };
+
 
     return (
         <div className="dashboard-container">
             <h2>Dashboard</h2>
             {message && <p className="message">{message}</p>}
+            <button onClick={() => setShowCompleted(!showCompleted)}>
+                {showCompleted ? 'Hide Completed Items' : 'Show Completed Items'}
+            </button>
             <div className="add-list">
                 <input
                     type="text"
@@ -499,6 +520,7 @@ const Dashboard = () => {
             </DragDropContext>
         </div>
     );
+
 };
 
 export default Dashboard;
