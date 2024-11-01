@@ -1,16 +1,15 @@
-// src/components/Dashboard.js
-
 import React, { useState, useEffect } from 'react';
 import '../styles/dashboard.css';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
-const API_URL = 'http://127.0.0.1:5000'; // Ensure this matches your Flask server URL
+const API_URL = 'http://127.0.0.1:5000';
 
 const Dashboard = () => {
     const [todoLists, setTodoLists] = useState([]);
     const [newListTitle, setNewListTitle] = useState('');
-    const [newItemContent, setNewItemContent] = useState('');
+    const [listItemContent, setListItemContent] = useState({});
+    const [subtaskContent, setSubtaskContent] = useState({});
     const [message, setMessage] = useState(null);
     const navigate = useNavigate();
 
@@ -77,7 +76,8 @@ const Dashboard = () => {
     };
 
     const handleAddItem = async (listId, parentId = null) => {
-        if (!newItemContent) {
+        const content = parentId ? subtaskContent[parentId] : listItemContent[listId];
+        if (!content) {
             setMessage("Content is required.");
             return;
         }
@@ -88,7 +88,7 @@ const Dashboard = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,
                 },
-                body: JSON.stringify({ content: newItemContent, parent_id: parentId }),
+                body: JSON.stringify({ content, parent_id: parentId }),
             });
             if (response.status === 401) {
                 setMessage("Unauthorized. Please log in again.");
@@ -98,14 +98,23 @@ const Dashboard = () => {
             const data = await response.json();
             if (response.ok && data.success) {
                 setMessage("Item added successfully!");
-                setNewItemContent('');
-                // Refresh the list
-                setTodoLists((prev) => prev.map(list => {
-                    if (list.id === listId) {
-                        return { ...list, items: [...list.items, { id: data.item_id, content: newItemContent, parent_id: parentId }] };
-                    }
-                    return list;
-                }));
+                // Refresh the list with new item
+                setTodoLists((prev) =>
+                    prev.map((list) => {
+                        if (list.id === listId) {
+                            return {
+                                ...list,
+                                items: [...list.items, { id: data.item_id, content, parent_id: parentId, items: [] }],
+                            };
+                        }
+                        return list;
+                    })
+                );
+                if (parentId) {
+                    setSubtaskContent((prev) => ({ ...prev, [parentId]: '' }));
+                } else {
+                    setListItemContent((prev) => ({ ...prev, [listId]: '' }));
+                }
             } else {
                 setMessage(data.message || "Failed to add item.");
             }
@@ -115,88 +124,50 @@ const Dashboard = () => {
         }
     };
 
-    const handleDragEnd = (result) => {
-        if (!result.destination) return;
-        const { source, destination } = result;
-        const sourceListId = source.droppableId;
-        const destinationListId = destination.droppableId;
-
-        if (sourceListId === destinationListId && source.index === destination.index) {
-            return;
-        }
-
-        const sourceListIndex = todoLists.findIndex(list => list.id.toString() === sourceListId);
-        const destinationListIndex = todoLists.findIndex(list => list.id.toString() === destinationListId);
-        const sourceList = todoLists[sourceListIndex];
-        const [movedItem] = sourceList.items.splice(source.index, 1);
-        todoLists[destinationListIndex].items.splice(destination.index, 0, movedItem);
-
-        setTodoLists([...todoLists]);
-
-        try {
-            handleMoveItem(movedItem.id, destinationListId);
-        } catch (error) {
-            console.error("Error during drag and drop update:", error);
-        }
+    const handleInputChange = (setter, id, value) => {
+        setter((prev) => ({ ...prev, [id]: value }));
     };
 
-    const handleMoveItem = async (itemId, newParentId) => {
-        try {
-            const response = await fetch(`${API_URL}/item/move`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                },
-                body: JSON.stringify({ item_id: itemId, new_parent_id: newParentId }),
-            });
-            if (response.status === 401) {
-                setMessage("Unauthorized. Please log in again.");
-                navigate('/login');
-                return;
-            }
-            const data = await response.json();
-            if (response.ok && data.success) {
-                setMessage("Item moved successfully!");
-            } else {
-                setMessage(data.message || "Failed to move item.");
-            }
-        } catch (error) {
-            console.error("Error moving item:", error);
-            setMessage("An error occurred. Please try again later.");
-        }
-    };
-
-    const renderItems = (items, depth = 1) => {
+    const renderItems = (items, listId, depth = 1) => {
+        if (!items) return null; // Add a check for items being undefined
         if (depth > 3) return null;
-        return items.map((item, index) => (
-            <Draggable key={item.id} draggableId={item.id.toString()} index={index}>
-                {(provided) => (
-                    <li
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                        className={`todo-item item-depth-${depth}`}
-                    >
-                        {item.content}
-                        {depth < 3 && (
-                            <div className="item-actions">
-                                <input
-                                    type="text"
-                                    placeholder="New Subtask Content"
-                                    value={newItemContent}
-                                    onChange={(e) => setNewItemContent(e.target.value)}
-                                />
-                                <button onClick={() => handleAddItem(item.list_id, item.id)}>Add Subtask</button>
-                            </div>
-                        )}
-                        {depth < 3 && item.items && (
-                            <ul>{renderItems(item.items, depth + 1)}</ul>
-                        )}
-                    </li>
-                )}
-            </Draggable>
-        ));
+
+        return items.map((item, index) => {
+            if (!item.id) return null; // Add a check to ensure item has an id
+
+            const subtaskValue = subtaskContent[item.id] || '';
+
+            return (
+                <Draggable key={item.id} draggableId={item.id.toString()} index={index}>
+                    {(provided) => (
+                        <li
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className={`todo-item item-depth-${depth}`}
+                        >
+                            {item.content}
+                            {depth < 3 && (
+                                <div className="item-actions">
+                                    <input
+                                        type="text"
+                                        placeholder="New Subtask Content"
+                                        value={subtaskValue}
+                                        onChange={(e) =>
+                                            handleInputChange(setSubtaskContent, item.id, e.target.value)
+                                        }
+                                    />
+                                    <button onClick={() => handleAddItem(listId, item.id)}>Add Subtask</button>
+                                </div>
+                            )}
+                            {depth < 3 && item.items && (
+                                <ul>{renderItems(item.items, listId, depth + 1)}</ul>
+                            )}
+                        </li>
+                    )}
+                </Draggable>
+            );
+        });
     };
 
     return (
@@ -212,32 +183,38 @@ const Dashboard = () => {
                 />
                 <button onClick={handleAddList}>Add List</button>
             </div>
-            <DragDropContext onDragEnd={handleDragEnd}>
+            <DragDropContext onDragEnd={() => { }}>
                 <div className="todo-lists">
-                    {todoLists.map((list) => (
-                        <div key={list.id} className="todo-list">
-                            <h3>{list.title}</h3>
-                            <Droppable droppableId={list.id.toString()}>
-                                {(provided) => (
-                                    <ul
-                                        {...provided.droppableProps}
-                                        ref={provided.innerRef}
-                                        className="todo-items"
-                                    >
-                                        {renderItems(list.items)}
-                                        {provided.placeholder}
-                                    </ul>
-                                )}
-                            </Droppable>
-                            <input
-                                type="text"
-                                placeholder="New Item Content"
-                                value={newItemContent}
-                                onChange={(e) => setNewItemContent(e.target.value)}
-                            />
-                            <button onClick={() => handleAddItem(list.id)}>Add Item</button>
-                        </div>
-                    ))}
+                    {todoLists.map((list) => {
+                        if (!list.id) return null; // Add a check to ensure list has an id
+
+                        return (
+                            <div key={list.id} className="todo-list">
+                                <h3>{list.title}</h3>
+                                <Droppable droppableId={list.id.toString()}>
+                                    {(provided) => (
+                                        <ul
+                                            {...provided.droppableProps}
+                                            ref={provided.innerRef}
+                                            className="todo-items"
+                                        >
+                                            {renderItems(list.items, list.id)}
+                                            {provided.placeholder}
+                                        </ul>
+                                    )}
+                                </Droppable>
+                                <input
+                                    type="text"
+                                    placeholder="New Item Content"
+                                    value={listItemContent[list.id] || ''}
+                                    onChange={(e) =>
+                                        handleInputChange(setListItemContent, list.id, e.target.value)
+                                    }
+                                />
+                                <button onClick={() => handleAddItem(list.id)}>Add Item</button>
+                            </div>
+                        );
+                    })}
                 </div>
             </DragDropContext>
         </div>
