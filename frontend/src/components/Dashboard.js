@@ -10,6 +10,7 @@ const Dashboard = () => {
     const [newListTitle, setNewListTitle] = useState('');
     const [listItemContent, setListItemContent] = useState({});
     const [subtaskContent, setSubtaskContent] = useState({});
+    const [collapsedItems, setCollapsedItems] = useState({});
     const [message, setMessage] = useState(null);
     const navigate = useNavigate();
 
@@ -128,14 +129,22 @@ const Dashboard = () => {
         setter((prev) => ({ ...prev, [id]: value }));
     };
 
+    const toggleCollapse = (itemId) => {
+        setCollapsedItems((prev) => ({
+            ...prev,
+            [itemId]: !prev[itemId],
+        }));
+    };
+
     const renderItems = (items, listId, depth = 1) => {
-        if (!items) return null; // Add a check for items being undefined
+        if (!items) return null;
         if (depth > 3) return null;
 
         return items.map((item, index) => {
-            if (!item.id) return null; // Add a check to ensure item has an id
+            if (!item.id) return null;
 
             const subtaskValue = subtaskContent[item.id] || '';
+            const isCollapsed = collapsedItems[item.id];
 
             return (
                 <Draggable key={item.id} draggableId={item.id.toString()} index={index}>
@@ -146,22 +155,31 @@ const Dashboard = () => {
                             {...provided.dragHandleProps}
                             className={`todo-item item-depth-${depth}`}
                         >
-                            {item.content}
-                            {depth < 3 && (
-                                <div className="item-actions">
-                                    <input
-                                        type="text"
-                                        placeholder="New Subtask Content"
-                                        value={subtaskValue}
-                                        onChange={(e) =>
-                                            handleInputChange(setSubtaskContent, item.id, e.target.value)
-                                        }
-                                    />
-                                    <button onClick={() => handleAddItem(listId, item.id)}>Add Subtask</button>
-                                </div>
-                            )}
-                            {depth < 3 && item.items && (
-                                <ul>{renderItems(item.items, listId, depth + 1)}</ul>
+                            <div className="item-header">
+                                {item.items && item.items.length > 0 && (
+                                    <button onClick={() => toggleCollapse(item.id)}>
+                                        {isCollapsed ? '+' : '-'}
+                                    </button>
+                                )}
+                                <span>{item.content}</span>
+                            </div>
+                            {!isCollapsed && depth < 3 && (
+                                <>
+                                    <div className="item-actions">
+                                        <input
+                                            type="text"
+                                            placeholder="New Subtask Content"
+                                            value={subtaskValue}
+                                            onChange={(e) =>
+                                                handleInputChange(setSubtaskContent, item.id, e.target.value)
+                                            }
+                                        />
+                                        <button onClick={() => handleAddItem(listId, item.id)}>Add Subtask</button>
+                                    </div>
+                                    {item.items && (
+                                        <ul>{renderItems(item.items, listId, depth + 1)}</ul>
+                                    )}
+                                </>
                             )}
                         </li>
                     )}
@@ -186,7 +204,7 @@ const Dashboard = () => {
             <DragDropContext onDragEnd={() => { }}>
                 <div className="todo-lists">
                     {todoLists.map((list) => {
-                        if (!list.id) return null; // Add a check to ensure list has an id
+                        if (!list.id) return null;
 
                         return (
                             <div key={list.id} className="todo-list">
