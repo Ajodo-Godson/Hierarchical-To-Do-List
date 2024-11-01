@@ -12,6 +12,8 @@ const Dashboard = () => {
     const [subtaskContent, setSubtaskContent] = useState({});
     const [collapsedItems, setCollapsedItems] = useState({});
     const [message, setMessage] = useState(null);
+    const [editingItem, setEditingItem] = useState(null);
+    const [editingContent, setEditingContent] = useState('');
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -53,28 +55,23 @@ const Dashboard = () => {
     const onDragEnd = (result) => {
         const { source, destination } = result;
 
-        // If there's no destination (dropped outside any droppable area), exit
         if (!destination) {
             return;
         }
 
-        // If the item was dropped in the same position, do nothing
         if (source.droppableId === destination.droppableId && source.index === destination.index) {
             return;
         }
 
-        // Get the list where the item was dragged from
         const sourceList = todoLists.find(list => `list-${list.id}` === source.droppableId);
         const destinationList = todoLists.find(list => `list-${list.id}` === destination.droppableId);
 
-        // Move within the same list
         if (sourceList === destinationList) {
             const updatedItems = reorderItems(sourceList.items, source.index, destination.index);
             setTodoLists(todoLists.map(list =>
                 list.id === sourceList.id ? { ...list, items: updatedItems } : list
             ));
         } else {
-            // Moving between different lists
             const sourceItems = Array.from(sourceList.items);
             const [movedItem] = sourceItems.splice(source.index, 1);
             const destinationItems = Array.from(destinationList.items);
@@ -125,6 +122,53 @@ const Dashboard = () => {
         }
     };
 
+    const handleEditItem = async (itemId) => {
+        if (!editingContent) {
+            setMessage("Content is required.");
+            return;
+        }
+        try {
+            const response = await fetch(`${API_URL}/item/edit/${itemId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                },
+                body: JSON.stringify({ content: editingContent }),
+            });
+            if (response.status === 401) {
+                setMessage("Unauthorized. Please log in again.");
+                navigate('/login');
+                return;
+            }
+            const data = await response.json();
+            if (response.ok && data.success) {
+                setMessage("Item updated successfully!");
+                setTodoLists((prev) =>
+                    prev.map((list) => {
+                        const updateItemRecursively = (items) =>
+                            items.map((item) => {
+                                if (item.id === itemId) {
+                                    return { ...item, content: editingContent };
+                                }
+                                if (item.items && item.items.length > 0) {
+                                    return { ...item, items: updateItemRecursively(item.items) };
+                                }
+                                return item;
+                            });
+                        return { ...list, items: updateItemRecursively(list.items) };
+                    })
+                );
+                setEditingItem(null);
+            } else {
+                setMessage(data.message || "Failed to update item.");
+            }
+        } catch (error) {
+            console.error("Error editing item:", error);
+            setMessage("An error occurred. Please try again later.");
+        }
+    };
+
     const handleDeleteList = async (listId) => {
         try {
             const response = await fetch(`${API_URL}/list/delete/${listId}`, {
@@ -150,24 +194,6 @@ const Dashboard = () => {
             console.error("Error deleting list:", error);
             setMessage("An error occurred. Please try again later.");
         }
-    };
-
-    const addSubItemToParent = (items, parentId, newItem) => {
-        return items.map(item => {
-            if (item.id === parentId) {
-                return {
-                    ...item,
-                    items: [...(item.items || []), newItem],
-                };
-            } else if (item.items && item.items.length > 0) {
-                return {
-                    ...item,
-                    items: addSubItemToParent(item.items, parentId, newItem),
-                };
-            } else {
-                return item;
-            }
-        });
     };
 
     const handleAddItem = async (listId, parentId = null) => {
@@ -228,8 +254,26 @@ const Dashboard = () => {
             }
         } catch (error) {
             console.error("Error adding item:", error);
-            setMessage("An error occurred. Please try again later.");
+            setMessage("An error occurred. Please try again later.")
         }
+    };
+
+    const addSubItemToParent = (items, parentId, newItem) => {
+        return items.map(item => {
+            if (item.id === parentId) {
+                return {
+                    ...item,
+                    items: [...(item.items || []), newItem],
+                };
+            } else if (item.items && item.items.length > 0) {
+                return {
+                    ...item,
+                    items: addSubItemToParent(item.items, parentId, newItem),
+                };
+            } else {
+                return item;
+            }
+        });
     };
 
     const handleDeleteItem = async (itemId) => {
@@ -358,11 +402,27 @@ const Dashboard = () => {
                                         {isCollapsed ? '+' : '-'}
                                     </button>
                                 )}
-                                <span>{item.content}</span>
+                                {editingItem === item.id ? (
+                                    <>
+                                        <input
+                                            type="text"
+                                            value={editingContent}
+                                            onChange={(e) => setEditingContent(e.target.value)}
+                                        />
+                                        <button onClick={() => handleEditItem(item.id)}>Save</button>
+                                        <button onClick={() => setEditingItem(null)}>Cancel</button>
+                                    </>
+                                ) : (
+                                    <span>{item.content}</span>
+                                )}
                                 <button onClick={() => handleToggleItem(item.id)}>
                                     {item.completed ? 'Mark Incomplete' : 'Mark Complete'}
                                 </button>
                                 <button onClick={() => handleDeleteItem(item.id)}>Delete</button>
+                                <button onClick={() => {
+                                    setEditingItem(item.id);
+                                    setEditingContent(item.content);
+                                }}>Edit</button>
                             </div>
                             {!isCollapsed && depth < 3 && (
                                 <>

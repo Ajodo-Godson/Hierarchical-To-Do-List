@@ -107,6 +107,35 @@ def move_item():
     return jsonify({"success": True, "message": "Item moved successfully"}), 200
 
 
+@todo.route("/list/update", methods=["POST"])
+@jwt_required()
+def update_list():
+    current_user_id = get_jwt_identity()
+    data = request.json
+    list_id = data.get("id")
+    new_title = data.get("title")
+    new_items = data.get("items")
+
+    todo_list = TodoList.query.get_or_404(list_id)
+    if todo_list.owner_id != current_user_id:
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+
+    if new_title:
+        todo_list.title = new_title
+
+    # Assuming new_items is a list of item dictionaries to update the list
+    if new_items is not None:
+        for item_data in new_items:
+            item = TodoItem.query.get(item_data["id"])
+            if item and item.list_id == list_id:
+                item.content = item_data.get("content", item.content)
+                item.completed = item_data.get("completed", item.completed)
+                item.parent_id = item_data.get("parent_id", item.parent_id)
+
+    db.session.commit()
+    return jsonify({"success": True, "message": "List updated successfully"}), 200
+
+
 @todo.route("/item/<int:parent_id>/add_subtask", methods=["POST"])
 @jwt_required()
 def add_subtask(parent_id):
