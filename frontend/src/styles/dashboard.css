@@ -67,18 +67,20 @@ h2 {
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
+    align-items: flex-start;
 }
 
+
 .todo-list {
-    flex: 1 1 300px;
+    flex: 0 1 calc(33.333% - 1rem);
     max-width: calc(33.333% - 1rem);
     background-color: #1f2937;
     border-radius: 0.5rem;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-    overflow: hidden;
     display: flex;
     flex-direction: column;
 }
+
 
 .list-header {
     display: flex;
@@ -116,7 +118,6 @@ h2 {
     padding: 1rem;
     margin: 0;
     overflow-y: auto;
-    flex-grow: 1;
 }
 
 .todo-item {
