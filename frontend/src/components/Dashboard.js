@@ -43,6 +43,55 @@ const Dashboard = () => {
         fetchTodoLists();
     }, [navigate]);
 
+    const reorderItems = (list, startIndex, endIndex) => {
+        const result = Array.from(list);
+        const [removed] = result.splice(startIndex, 1);
+        result.splice(endIndex, 0, removed);
+        return result;
+    };
+
+    const onDragEnd = (result) => {
+        const { source, destination } = result;
+
+        // If there's no destination (dropped outside any droppable area), exit
+        if (!destination) {
+            return;
+        }
+
+        // If the item was dropped in the same position, do nothing
+        if (source.droppableId === destination.droppableId && source.index === destination.index) {
+            return;
+        }
+
+        // Get the list where the item was dragged from
+        const sourceList = todoLists.find(list => `list-${list.id}` === source.droppableId);
+        const destinationList = todoLists.find(list => `list-${list.id}` === destination.droppableId);
+
+        // Move within the same list
+        if (sourceList === destinationList) {
+            const updatedItems = reorderItems(sourceList.items, source.index, destination.index);
+            setTodoLists(todoLists.map(list =>
+                list.id === sourceList.id ? { ...list, items: updatedItems } : list
+            ));
+        } else {
+            // Moving between different lists
+            const sourceItems = Array.from(sourceList.items);
+            const [movedItem] = sourceItems.splice(source.index, 1);
+            const destinationItems = Array.from(destinationList.items);
+            destinationItems.splice(destination.index, 0, movedItem);
+
+            setTodoLists(todoLists.map(list => {
+                if (list.id === sourceList.id) {
+                    return { ...list, items: sourceItems };
+                } else if (list.id === destinationList.id) {
+                    return { ...list, items: destinationItems };
+                } else {
+                    return list;
+                }
+            }));
+        }
+    };
+
     const handleAddList = async () => {
         if (!newListTitle) {
             setMessage("Title is required.");
@@ -79,13 +128,11 @@ const Dashboard = () => {
     const addSubItemToParent = (items, parentId, newItem) => {
         return items.map(item => {
             if (item.id === parentId) {
-                // Found the parent, add newItem to its items array
                 return {
                     ...item,
                     items: [...(item.items || []), newItem],
                 };
             } else if (item.items && item.items.length > 0) {
-                // Recurse into subitems
                 return {
                     ...item,
                     items: addSubItemToParent(item.items, parentId, newItem),
@@ -123,7 +170,6 @@ const Dashboard = () => {
                     prev.map((list) => {
                         if (list.id === listId) {
                             if (parentId) {
-                                // Use the recursive function to add the subtask
                                 const updatedItems = addSubItemToParent(list.items, parentId, {
                                     id: data.item_id,
                                     content,
@@ -158,6 +204,75 @@ const Dashboard = () => {
         }
     };
 
+    const handleDeleteItem = async (itemId) => {
+        try {
+            const response = await fetch(`${API_URL}/item/delete/${itemId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                },
+            });
+            if (response.status === 401) {
+                setMessage("Unauthorized. Please log in again.");
+                navigate('/login');
+                return;
+            }
+            const data = await response.json();
+            if (response.ok) {
+                setMessage("Item deleted successfully!");
+                setTodoLists((prev) =>
+                    prev.map((list) => {
+                        return {
+                            ...list,
+                            items: list.items.filter((item) => item.id !== itemId),
+                        };
+                    })
+                );
+            } else {
+                setMessage(data.message || "Failed to delete item.");
+            }
+        } catch (error) {
+            console.error("Error deleting item:", error);
+            setMessage("An error occurred. Please try again later.");
+        }
+    };
+
+    const handleToggleItem = async (itemId) => {
+        try {
+            const response = await fetch(`${API_URL}/item/toggle/${itemId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                },
+            });
+            if (response.status === 401) {
+                setMessage("Unauthorized. Please log in again.");
+                navigate('/login');
+                return;
+            }
+            const data = await response.json();
+            if (response.ok) {
+                setMessage("Item toggled successfully!");
+                setTodoLists((prev) =>
+                    prev.map((list) => {
+                        return {
+                            ...list,
+                            items: list.items.map((item) =>
+                                item.id === itemId ? { ...item, completed: !item.completed } : item
+                            ),
+                        };
+                    })
+                );
+            } else {
+                setMessage(data.message || "Failed to toggle item.");
+            }
+        } catch (error) {
+            console.error("Error toggling item:", error);
+            setMessage("An error occurred. Please try again later.");
+        }
+    };
 
     const handleInputChange = (setter, id, value) => {
         setter((prev) => ({ ...prev, [id]: value }));
@@ -181,7 +296,7 @@ const Dashboard = () => {
             const isCollapsed = collapsedItems[item.id];
 
             return (
-                <Draggable key={item.id} draggableId={item.id.toString()} index={index}>
+                <Draggable key={item.id} draggableId={`item-${listId}-${item.id}`} index={index}>
                     {(provided) => (
                         <li
                             ref={provided.innerRef}
@@ -196,6 +311,10 @@ const Dashboard = () => {
                                     </button>
                                 )}
                                 <span>{item.content}</span>
+                                <button onClick={() => handleToggleItem(item.id)}>
+                                    {item.completed ? 'Mark Incomplete' : 'Mark Complete'}
+                                </button>
+                                <button onClick={() => handleDeleteItem(item.id)}>Delete</button>
                             </div>
                             {!isCollapsed && depth < 3 && (
                                 <>
@@ -211,12 +330,11 @@ const Dashboard = () => {
                                         <button onClick={() => handleAddItem(listId, item.id)}>Add Subtask</button>
                                     </div>
                                     {item.items && (
-                                        <ul>{renderItems(item.items, listId, depth + 1)}</ul>
+                                        <ul className="subtask">{renderItems(item.items, listId, depth + 1)}</ul>
                                     )}
                                 </>
                             )}
                         </li>
-
                     )}
                 </Draggable>
             );
@@ -236,26 +354,24 @@ const Dashboard = () => {
                 />
                 <button onClick={handleAddList}>Add List</button>
             </div>
-            <DragDropContext onDragEnd={() => { }}>
+            <DragDropContext onDragEnd={onDragEnd}>
                 <div className="todo-lists">
-                    {todoLists.map((list) => {
-                        if (!list.id) return null;
-
-                        return (
-                            <div key={list.id} className="todo-list">
-                                <h3>{list.title}</h3>
-                                <Droppable droppableId={list.id.toString()}>
-                                    {(provided) => (
-                                        <ul
-                                            {...provided.droppableProps}
-                                            ref={provided.innerRef}
-                                            className="todo-items"
-                                        >
-                                            {renderItems(list.items, list.id)}
-                                            {provided.placeholder}
-                                        </ul>
-                                    )}
-                                </Droppable>
+                    {todoLists.map((list) => (
+                        <div key={list.id} className="todo-list">
+                            <h3>{list.title}</h3>
+                            <Droppable droppableId={`list-${list.id}`}>
+                                {(provided) => (
+                                    <ul
+                                        {...provided.droppableProps}
+                                        ref={provided.innerRef}
+                                        className="todo-items"
+                                    >
+                                        {renderItems(list.items, list.id)}
+                                        {provided.placeholder}
+                                    </ul>
+                                )}
+                            </Droppable>
+                            <div className="item-actions">
                                 <input
                                     type="text"
                                     placeholder="New Item Content"
@@ -266,8 +382,8 @@ const Dashboard = () => {
                                 />
                                 <button onClick={() => handleAddItem(list.id)}>Add Item</button>
                             </div>
-                        );
-                    })}
+                        </div>
+                    ))}
                 </div>
             </DragDropContext>
         </div>
