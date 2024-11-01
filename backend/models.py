@@ -42,16 +42,3 @@ class TodoItem(db.Model):
     list = relationship("TodoList", back_populates="items")
     parent_id = Column(Integer, ForeignKey("todo_items.id"))
     children = relationship("TodoItem")
-
-
-class Task(db.Model):
-    __tablename__ = "tasks"
-    id = Column(Integer, primary_key=True)
-    title = Column(String(100))
-    description = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    completed = Column(Boolean, default=False)
-
-    def __repr__(self):
-        return self.title
