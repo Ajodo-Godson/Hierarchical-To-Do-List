@@ -88,49 +88,43 @@ Users can create to-do lists, add tasks and subtasks, and organize them in a nes
 
 - **Add a New To-Do List**:
     - `POST /todo/list/add`
-    - Request Body: `{ "title": "New List" }`
-    - Response: `{ "success": True, "list_id": 1 }`
+   
 
 - **Retrieve All To-Do Lists**:
     - `GET /todo/list`
-    - Response: `{ "lists": [ { "id": 1, "title": "List Title", "items": [...] } ] }`
+   
 
 - **Add a New Item to a List**:
     - `POST /todo/list/<int:list_id>/add`
-    - Request Body: `{ "content": "New Item", "parent_id": null }`
-    - Response: `{ "success": True, "item_id": 1, "message": "Item added successfully" }`
+   
 
 - **Move an Item**:
     - `POST /todo/item/move`
-    - Request Body: `{ "item_id": 1, "new_parent_id": 2 }`
-    - Response: `{ "success": True, "message": "Item moved successfully" }`
+   
 
 - **Update a To-Do List**:
     - `POST /todo/list/update`
-    - Request Body: `{ "id": 1, "title": "Updated Title", "items": [ { "id": 1, "content": "Updated Content", "completed": true, "parent_id": null } ] }`
-    - Response: `{ "success": True, "message": "List updated successfully" }`
+   
 
 - **Add a Subtask**:
     - `POST /todo/item/<int:parent_id>/add_subtask`
-    - Request Body: `{ "content": "New Subtask" }`
-    - Response: `{ "success": True, "item_id": 1, "message": "Subtask added successfully" }`
+    
 
 - **Toggle Item Completion**:
     - `POST /todo/item/toggle/<int:item_id>`
-    - Response: `{ "success": True }`
+    
 
 - **Delete a To-Do List**:
     - `POST /todo/list/delete/<int:list_id>`
-    - Response: `{ "message": "List deleted successfully" }`
+    
 
 - **Delete an Item**:
     - `POST /todo/item/delete/<int:item_id>`
-    - Response: `{ "message": "Item deleted successfully" }`
+    
 
 - **Edit an Item**:
     - `POST /todo/item/edit/<int:item_id>`
-    - Request Body: `{ "content": "Updated Content" }`
-    - Response: `{ "success": True }`
+    
 
 ## Models
 
