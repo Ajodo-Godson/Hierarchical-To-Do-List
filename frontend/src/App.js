@@ -59,7 +59,7 @@ const App = () => {
         <Route path="/signup" element={<Signup />} />         {/* Route for the Signup page */}
         <Route path="/login" element={<Login />} />           {/* Route for the Login page */}
         <Route path="/dashboard" element={<Dashboard />} />   {/* Route for the Dashboard page */}
-        <Route path="/" element={<h1>Welcome to the App!</h1>} /> {/* Default route (homepage) */}
+        <Route path="/" element={<h1>Welcome to your Hierarchical To-Do-List!</h1>} /> {/* Default route (homepage) */}
       </Routes>
     </Router>
   );
