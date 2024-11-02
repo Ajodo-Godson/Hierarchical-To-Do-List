@@ -1,8 +1,9 @@
 # Hierarchical To-Do List
 
  
+ 
 ## Overview
-## [Demo Link](https://www.loom.com/share/372c4d84f3e84d37b2d4ddf5e3f8a701?sid=42610339-75b6-4a84-8df5-89c31a539332)
+#### [Demo Link](https://www.loom.com/share/372c4d84f3e84d37b2d4ddf5e3f8a701?sid=42610339-75b6-4a84-8df5-89c31a539332)
 
 This project is a full-stack web application that provides users with the ability to manage their tasks in a hierarchical manner. 
 
@@ -22,7 +23,7 @@ Users can create to-do lists, add tasks and subtasks, and organize them in a nes
 
 - [Installation](#installation)
 - [Usage](#usage)
-
+- [Frontend Routes](#frontend-routes)
 - [Issues and Future Potential Plan](#issues-and-future-potential-plan)
 - [Contributing](#contributing)
 - [License](#license)
@@ -63,6 +64,14 @@ Users can create to-do lists, add tasks and subtasks, and organize them in a nes
     npm install
     npm start
     ```
+
+### Frontend Routes
+The frontend is built with React and uses React Router for navigation. Here are the main routes defined in `App.js`:
+
+- `/signup`: Route for the Signup page
+- `/login`: Route for the Login page
+- `/dashboard`: Route for the Dashboard page
+- `/`: Default route (homepage) displaying a welcome message
 
 ## Issues and Future Potential Plan
 
