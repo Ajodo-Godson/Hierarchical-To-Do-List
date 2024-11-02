@@ -22,10 +22,8 @@ Users can create to-do lists, add tasks and subtasks, and organize them in a nes
 
 - [Installation](#installation)
 - [Usage](#usage)
-- [API Endpoints](#api-endpoints)
-  - [Authentication Endpoints](#authentication-endpoints)
-  - [To-Do List Endpoints](#to-do-list-endpoints)
-- [Models](#models)
+
+- [Issues and Future Potential Plan](#issues-and-future-potential-plan)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -66,93 +64,19 @@ Users can create to-do lists, add tasks and subtasks, and organize them in a nes
     npm start
     ```
 
+## Issues and Future Potential Plan
 
-## API Endpoints
+One of the main issues with the current project is the UI design. The user interface could be improved to enhance the overall user experience and make the application more visually appealing.
 
-### Authentication Endpoints
+To address this issue, here are some potential plans for the future:
 
-- **User Signup**:
-    - `POST /auth/signup`
-    - Request Body: `{ "email": "user@example.com", "name": "User Name", "password": "password" }`
-    - Response: `{ "message": "Account created successfully" }`
 
-- **User Login**:
-    - `POST /auth/login`
-    - Request Body: `{ "email": "user@example.com", "password": "password" }`
-    - Response: `{ "success": True, "token": "JWT_TOKEN", "message": "Login successful" }`
+1. Redesign the UI: Based on the feedback received, work on redesigning the user interface to make it more intuitive, user-friendly, and visually appealing. Consider using modern design principles and best practices to create a clean and engaging UI.
+2. Work around moving subsubtasks into subtasks, and increase the depth of tasks that can be added. 
+3. Add forgotten password function incase users have issues logging in. 
 
-- **User Logout**:
-    - `GET /auth/logout`
-    - Response: `{ "message": "Logged out successfully" }`
+By addressing the UI design issue and implementing these potential plans, the project can provide a more visually appealing and user-friendly experience for its users.
 
-### To-Do List Endpoints
-
-- **Add a New To-Do List**:
-    - `POST /todo/list/add`
-   
-
-- **Retrieve All To-Do Lists**:
-    - `GET /todo/list`
-   
-
-- **Add a New Item to a List**:
-    - `POST /todo/list/<int:list_id>/add`
-   
-
-- **Move an Item**:
-    - `POST /todo/item/move`
-   
-
-- **Update a To-Do List**:
-    - `POST /todo/list/update`
-   
-
-- **Add a Subtask**:
-    - `POST /todo/item/<int:parent_id>/add_subtask`
-    
-
-- **Toggle Item Completion**:
-    - `POST /todo/item/toggle/<int:item_id>`
-    
-
-- **Delete a To-Do List**:
-    - `POST /todo/list/delete/<int:list_id>`
-    
-
-- **Delete an Item**:
-    - `POST /todo/item/delete/<int:item_id>`
-    
-
-- **Edit an Item**:
-    - `POST /todo/item/edit/<int:item_id>`
-    
-
-## Models
-
-### User
-
-- `id`: Integer, primary key.
-- `username`: String, unique, indexed.
-- `hashed_password`: String.
-- `lists`: Relationship to `TodoList`.
-
-### TodoList
-
-- `id`: Integer, primary key.
-- `title`: String, indexed.
-- `owner_id`: Integer, foreign key to `User`.
-- `owner`: Relationship to `User`.
-- `items`: Relationship to `TodoItem`.
-
-### TodoItem
-
-- `id`: Integer, primary key.
-- `content`: String, indexed.
-- `completed`: Boolean.
-- `list_id`: Integer, foreign key to `TodoList`.
-- `list`: Relationship to `TodoList`.
-- `parent_id`: Integer, foreign key to `TodoItem` (self-referential).
-- `children`: Self-referential relationship to `TodoItem`.
 
 ## Contributing
 
